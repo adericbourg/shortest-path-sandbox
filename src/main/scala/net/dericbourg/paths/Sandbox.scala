@@ -79,12 +79,15 @@ object Sandbox extends App {
         (vertex, weightsPerTarget)
       }
       .map { case (vertex, weights) => Stats(vertex, weights) }
-      .sortBy(_.standardDeviation)
+      // Sorting be mean first gives more power to close vertices. Sorting by standard deviation gives more equity.
+      // Mean first is more pragmatic.
+      .sortBy(s => (s.mean, s.standardDeviation))
 
     println("Sorted solutions:")
     stats.foreach(println)
+    println
 
-    println(s"Optimal solution for ${sources.mkString(", ")}")
+    println("Optimal solution:")
     val optimalTarget = stats.head
     println(optimalTarget)
     println()
@@ -94,7 +97,7 @@ object Sandbox extends App {
   findEccentricity(Seq(f, h, i))
   findEccentricity(Seq(a, b, e))
   findEccentricity(Seq(f, g, h))
-  findEccentricity(Seq(a, b)) // This corner-case sucks: we should choose a or b
+  findEccentricity(Seq(a, b))
 }
 
 case class Vertex(name: String)
@@ -106,13 +109,13 @@ class WeightedEdge(val weight: Int, val head: Vertex, val tail: Vertex) {
 
 class Stats(vertex: Vertex, values: Seq[Int]) {
 
-  import Stats._
 
-  val standardDeviation: Double = stdDev(values)
+  val standardDeviation: Double = Stats.standardDeviation(values)
+  val mean: Double = Stats.mean(values)
   val sum: Int = values.sum
 
 
-  override def toString = s"Stats(${vertex.name}: (stdDev: $standardDeviation, sum: $sum))"
+  override def toString = s"Stats(${vertex.name}: (mean: $mean, stdDev: $standardDeviation, sum: $sum))"
 }
 
 object Stats {
@@ -128,7 +131,9 @@ object Stats {
     xs.map(_.toDouble).map(a => math.pow(a - avg, 2)).sum / xs.size
   }
 
-  private[Stats] def stdDev[T: Numeric](xs: Iterable[T]): Double = {
+  private[Stats] def standardDeviation[T: Numeric](xs: Iterable[T]): Double = {
+    val avg = mean(xs)
+    xs.map(_.toDouble).map(a => math.pow(a - avg, 2)).sum / xs.size
     math.sqrt(variance(xs))
   }
 }
