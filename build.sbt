@@ -12,7 +12,6 @@ mainClass in(Compile, run) := Some("net.dericbourg.ratp.gtfs.Import")
 
 libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "9.4-1206-jdbc41",
-  "org.postgis" % "postgis-jdbc" % "1.3.3",
   "io.spray" %% "spray-json" % "1.3.2"
 )
 
