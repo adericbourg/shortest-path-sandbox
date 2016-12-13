@@ -5,7 +5,7 @@ import java.sql.ResultSet
 import net.dericbourg.db.UsingPostgres
 import net.dericbourg.util._
 import org.apache.commons.graph.Mapper
-import org.apache.commons.graph.model.UndirectedMutableGraph
+import org.apache.commons.graph.model.DirectedMutableGraph
 import org.apache.commons.graph.shortestpath.{AllVertexPairsShortestPath, DefaultWeightedEdgesSelector}
 import org.apache.commons.graph.weight.OrderedMonoid
 
@@ -48,7 +48,6 @@ object FloydWarshallRatp extends App {
   val voltaire = 1633
   val richelieuDrouot = 2447
   val buzenval = 2133
-  val massyPalaiseau = 1809
   val trinite = 1686
   val chatelet = 1964
   val stalingrad = 2485
@@ -59,10 +58,6 @@ object FloydWarshallRatp extends App {
     nodes(voltaire),
     nodes(richelieuDrouot),
     nodes(buzenval)
-  ))
-  findEccentricity(Seq(
-    nodes(voltaire),
-    nodes(massyPalaiseau)
   ))
   findEccentricity(Seq(
     nodes(trinite),
@@ -161,7 +156,7 @@ class Stats(vertex: StopNode, values: Seq[Int]) {
   val sum: Int = values.sum
 
 
-  override def toString = s"Stats(${vertex.name}: (mean: $mean, stdDev: $standardDeviation, sum: $sum))"
+  override def toString = s"Stats(${vertex.name} (${vertex.id}): (mean: $mean, stdDev: $standardDeviation, sum: $sum))"
 }
 
 object Stats {
@@ -188,7 +183,7 @@ class RatpGraph {
 
   import scala.collection.JavaConverters._
 
-  val underlying = new UndirectedMutableGraph[StopNode, StationLink]()
+  val underlying = new DirectedMutableGraph[StopNode, StationLink]()
 
   def addVertex(vertex: StopNode): Unit = underlying.addVertex(vertex)
 

@@ -1,7 +1,7 @@
-package net.dericbourg.paths
+package net.dericbourg.paths.directed
 
 import org.apache.commons.graph.Mapper
-import org.apache.commons.graph.model.UndirectedMutableGraph
+import org.apache.commons.graph.model.DirectedMutableGraph
 import org.apache.commons.graph.shortestpath.DefaultWeightedEdgesSelector
 import org.apache.commons.graph.weight.OrderedMonoid
 
@@ -14,10 +14,6 @@ object Sandbox extends App {
   val c = Vertex("c")
   val d = Vertex("d")
   val e = Vertex("e")
-  val f = Vertex("f")
-  val g = Vertex("g")
-  val h = Vertex("h")
-  val i = Vertex("i")
 
 
   graph.addVertex(a)
@@ -25,21 +21,17 @@ object Sandbox extends App {
   graph.addVertex(c)
   graph.addVertex(d)
   graph.addVertex(e)
-  graph.addVertex(f)
-  graph.addVertex(g)
-  graph.addVertex(h)
-  graph.addVertex(i)
 
+  graph.addEdge(new WeightedEdge(1, b, a))
   graph.addEdge(new WeightedEdge(1, a, b))
-  graph.addEdge(new WeightedEdge(1, a, f))
-  graph.addEdge(new WeightedEdge(1, b, f))
-  graph.addEdge(new WeightedEdge(1, b, i))
-  graph.addEdge(new WeightedEdge(1, c, h))
-  graph.addEdge(new WeightedEdge(1, d, h))
-  graph.addEdge(new WeightedEdge(1, e, h))
-  graph.addEdge(new WeightedEdge(1, f, g))
-  graph.addEdge(new WeightedEdge(1, g, h))
-  graph.addEdge(new WeightedEdge(1, g, i))
+  graph.addEdge(new WeightedEdge(1, a, d))
+  graph.addEdge(new WeightedEdge(1, d, a))
+  graph.addEdge(new WeightedEdge(1, c, a))
+  graph.addEdge(new WeightedEdge(1, a, c))
+  graph.addEdge(new WeightedEdge(1, a, e))
+  graph.addEdge(new WeightedEdge(1, e, a))
+  graph.addEdge(new WeightedEdge(1, d, e))
+  graph.addEdge(new WeightedEdge(1, e, d))
 
   class WeightedEdgeMapper extends Mapper[WeightedEdge, Int] {
     override def map(input: WeightedEdge): Int = input.weight
@@ -93,10 +85,10 @@ object Sandbox extends App {
     println()
   }
 
-  findEccentricity(Seq(a, g))
-  findEccentricity(Seq(f, h, i))
+  findEccentricity(Seq(b, e))
+  findEccentricity(Seq(b, d))
+  findEccentricity(Seq(a, b, c, d, e))
   findEccentricity(Seq(a, b, e))
-  findEccentricity(Seq(f, g, h))
   findEccentricity(Seq(a, b))
 }
 
@@ -142,7 +134,7 @@ class SandboxGraph {
 
   import scala.collection.JavaConverters._
 
-  val underlying = new UndirectedMutableGraph[Vertex, WeightedEdge]()
+  val underlying = new DirectedMutableGraph[Vertex, WeightedEdge]()
 
   def addVertex(vertex: Vertex): Unit = underlying.addVertex(vertex)
 
