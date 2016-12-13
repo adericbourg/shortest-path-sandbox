@@ -11,7 +11,7 @@ scalaVersion := "2.12.0"
 mainClass in(Compile, run) := Some("net.dericbourg.ratp.gtfs.Import")
 
 libraryDependencies ++= Seq(
-  "org.postgresql" % "postgresql" % "9.4-1206-jdbc41",
+  "org.postgresql" % "postgresql" % "9.4.1212",
   "io.spray" %% "spray-json" % "1.3.2"
 )
 
