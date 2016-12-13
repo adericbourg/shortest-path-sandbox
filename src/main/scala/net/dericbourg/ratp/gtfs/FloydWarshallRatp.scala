@@ -2,13 +2,15 @@ package net.dericbourg.ratp.gtfs
 
 import java.sql.{Connection, ResultSet}
 
+import net.dericbourg.util._
 import org.apache.commons.graph.Mapper
 import org.apache.commons.graph.model.UndirectedMutableGraph
-import org.apache.commons.graph.shortestpath.DefaultWeightedEdgesSelector
+import org.apache.commons.graph.shortestpath.{AllVertexPairsShortestPath, DefaultWeightedEdgesSelector}
 import org.apache.commons.graph.weight.OrderedMonoid
 import org.postgresql.ds.PGPoolingDataSource
 
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.duration.Duration
 import scala.util.Try
 
 object FloydWarshallRatp extends App {
@@ -27,19 +29,35 @@ object FloydWarshallRatp extends App {
 
   val q = new FWQuery(connection)
 
-  val nodes: Map[Long, StopNode] = q.stops
-    .groupBy(_.id)
-    .mapValues(_.head)
-  val links: Seq[StationLink] = q.links
-    .map(link => new StationLink(link.duration, nodes(link.from), nodes(link.to)))
+  val (nodes, fetchNodesDuration): (Map[Long, StopNode], Duration) = timed {
+    q.stops
+      .groupBy(_.id)
+      .mapValues(_.head)
+  }
+  val (links, fetchLinksDuration): (Seq[StationLink], Duration) = timed {
+    q.links
+      .map(link => new StationLink(link.duration, nodes(link.from), nodes(link.to)))
+  }
 
-  val graph = new RatpGraph
-  nodes.values.foreach(graph.addVertex)
-  links.foreach(graph.addEdge)
+  println(s"${nodes.keys.size} stations (fetched in $fetchNodesDuration)")
+  println(s"${links.size} links (fetched in $fetchLinksDuration)")
 
-  val pathSourceSelector = new DefaultWeightedEdgesSelector(graph.underlying)
-    .whereEdgesHaveWeights[Int, StationLinkMapper](new StationLinkMapper)
-  val floydWarshall = pathSourceSelector.applyingFloydWarshall(new Monoid)
+  val (graph, graphBuildDuration): (RatpGraph, Duration) = timed {
+    val g = new RatpGraph
+    nodes.values.foreach(g.addVertex)
+    links.foreach(g.addEdge)
+
+    g
+  }
+  println(s"Graph built in $graphBuildDuration")
+
+
+  val (floydWarshall, floydWarshallDuration): (AllVertexPairsShortestPath[StopNode, StationLink, Int], Duration) = timed {
+    val pathSourceSelector = new DefaultWeightedEdgesSelector(graph.underlying)
+      .whereEdgesHaveWeights[Int, StationLinkMapper](new StationLinkMapper)
+    pathSourceSelector.applyingFloydWarshall(new Monoid)
+  }
+  println(s"Floyd-Warshall algorithm applied in $floydWarshallDuration")
 
   val voltaire = 1633
   val richelieuDrouot = 2447
@@ -72,21 +90,23 @@ object FloydWarshallRatp extends App {
     println("------------------")
     println(s"  Eccentricity for ${sources.mkString(", ")}")
     println("------------------")
-    val stats: Seq[Stats] = graph.vertices
-      .map { vertex =>
-        val weightsPerTarget = sources
-          .map { sourceVertex =>
-            if (sourceVertex == vertex) 0
-            else floydWarshall.findShortestPath(sourceVertex, vertex).getWeight
-          }
-        (vertex, weightsPerTarget)
-      }
-      .map { case (vertex, weights) => Stats(vertex, weights) }
-      // Sorting be mean first gives more power to close vertices. Sorting by standard deviation gives more equity.
-      // Mean first is more pragmatic.
-      .sortBy(s => (s.mean, s.standardDeviation))
+    val (stats, duration): (Seq[Stats], Duration) = timed {
+      graph.vertices
+        .map { vertex =>
+          val weightsPerTarget = sources
+            .map { sourceVertex =>
+              if (sourceVertex == vertex) 0
+              else floydWarshall.findShortestPath(sourceVertex, vertex).getWeight
+            }
+          (vertex, weightsPerTarget)
+        }
+        .map { case (vertex, weights) => Stats(vertex, weights) }
+        // Sorting be mean first gives more power to close vertices. Sorting by standard deviation gives more equity.
+        // Mean first is more pragmatic.
+        .sortBy(s => (s.mean, s.standardDeviation))
+    }
 
-    println("Optimal solution:")
+    println(s"Optimal solution (found in $duration):")
     val optimalTarget = stats.head
     println(optimalTarget)
     println()
@@ -188,7 +208,8 @@ class RatpGraph {
 
   def vertices: Seq[StopNode] = underlying.getVertices.asScala.toSeq
 
-  def addEdge(edge: StationLink): Unit =
-  // For now, there are some duplicates in the results
+  def addEdge(edge: StationLink): Unit = {
+    // For now, there are some duplicates in the results
     Try(underlying.addEdge(edge.head, edge, edge.tail))
+  }
 }
