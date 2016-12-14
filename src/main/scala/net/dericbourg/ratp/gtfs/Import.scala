@@ -3,21 +3,10 @@ package net.dericbourg.ratp.gtfs
 import java.io.{File, FilenameFilter}
 
 import com.github.tototoshi.csv._
+import net.dericbourg.db.UsingPostgres
 import net.dericbourg.ratp.gtfs.model._
-import org.postgresql.ds.PGPoolingDataSource
 
 object Import extends App {
-
-  lazy val datasource = {
-    val p = new PGPoolingDataSource()
-    p.setDatabaseName("postgres")
-    p.setUser("postgres")
-    p.setPassword("postgres")
-
-    p
-  }
-
-  val connection = datasource.getConnection
 
   val gtfsRootDirectory = new File(s"${System.getProperty("user.home")}/tmp/RATP_GTFS")
   val lineDirectories: Array[File] = gtfsRootDirectory.
@@ -26,15 +15,16 @@ object Import extends App {
     }).
     filter(_.isDirectory)
 
-    lineDirectories.foreach { directory =>
-      println(s"Parsing routes from ${directory.getName}")
-      CSVReader.open(new File(directory, "routes.txt"))
-        .allWithHeaders()
-        .map(Route.parse)
-        .grouped(1000)
-        .toList
-        .par
-        .foreach { routeBatch =>
+  lineDirectories.foreach { directory =>
+    println(s"Parsing routes from ${directory.getName}")
+    CSVReader.open(new File(directory, "routes.txt"))
+      .allWithHeaders()
+      .map(Route.parse)
+      .grouped(1000)
+      .toList
+      .par
+      .foreach { routeBatch =>
+        UsingPostgres { connection =>
           val preparedStatement = connection.prepareStatement(Query.Route)
           routeBatch.foreach { (route: Route) =>
             import route._
@@ -46,17 +36,19 @@ object Import extends App {
           }
           preparedStatement.executeBatch()
         }
-    }
+      }
+  }
 
-    lineDirectories.foreach { directory =>
-      println(s"Parsing stops from ${directory.getName}")
-      CSVReader.open(new File(directory, "stops.txt"))
-        .allWithHeaders()
-        .map(Stop.parse)
-        .grouped(1000)
-        .toList
-        .par
-        .foreach { stopBatch =>
+  lineDirectories.foreach { directory =>
+    println(s"Parsing stops from ${directory.getName}")
+    CSVReader.open(new File(directory, "stops.txt"))
+      .allWithHeaders()
+      .map(Stop.parse)
+      .grouped(1000)
+      .toList
+      .par
+      .foreach { stopBatch =>
+        UsingPostgres { connection =>
           val preparedStatement = connection.prepareStatement(Query.Stop)
           stopBatch.foreach { (stop: Stop) =>
             import stop._
@@ -71,17 +63,19 @@ object Import extends App {
           }
           preparedStatement.executeBatch()
         }
-    }
+      }
+  }
 
-    lineDirectories.foreach { directory =>
-      println(s"Parsing trips from ${directory.getName}")
-      CSVReader.open(new File(directory, "trips.txt"))
-        .allWithHeaders()
-        .map(Trip.parse)
-        .grouped(1000)
-        .toList
-        .par
-        .foreach { tripBatch =>
+  lineDirectories.foreach { directory =>
+    println(s"Parsing trips from ${directory.getName}")
+    CSVReader.open(new File(directory, "trips.txt"))
+      .allWithHeaders()
+      .map(Trip.parse)
+      .grouped(1000)
+      .toList
+      .par
+      .foreach { tripBatch =>
+        UsingPostgres { connection =>
           val preparedStatement = connection.prepareStatement(Query.Trip)
           tripBatch.foreach { (trip: Trip) =>
             import trip._
@@ -94,17 +88,19 @@ object Import extends App {
           }
           preparedStatement.executeBatch()
         }
-    }
+      }
+  }
 
-    lineDirectories.foreach { directory =>
-      println(s"Parsing stop times from ${directory.getName}")
-      CSVReader.open(new File(directory, "stop_times.txt"))
-        .allWithHeaders()
-        .map(StopTime.parse)
-        .grouped(1000)
-        .toList
-        .par
-        .foreach { stopTimesBatch =>
+  lineDirectories.foreach { directory =>
+    println(s"Parsing stop times from ${directory.getName}")
+    CSVReader.open(new File(directory, "stop_times.txt"))
+      .allWithHeaders()
+      .map(StopTime.parse)
+      .grouped(1000)
+      .toList
+      .par
+      .foreach { stopTimesBatch =>
+        UsingPostgres { connection =>
           val preparedStatement = connection.prepareStatement(Query.StopTime)
           stopTimesBatch.foreach { (stopTime: StopTime) =>
             import stopTime._
@@ -116,7 +112,8 @@ object Import extends App {
           }
           preparedStatement.executeBatch()
         }
-    }
+      }
+  }
 
   lineDirectories.foreach { directory =>
     println(s"Parsing transfers from ${directory.getName}")
@@ -127,22 +124,22 @@ object Import extends App {
       .toList
       .par
       .foreach { transfersBatch =>
-        val preparedStatement = connection.prepareStatement(Query.Transfer)
-        transfersBatch.foreach { (transfer: Transfer) =>
-          import transfer._
-          preparedStatement.setLong(1, fromStopId)
-          preparedStatement.setLong(2, toStopId)
-          preparedStatement.setString(3, transferType)
-          preparedStatement.setLong(4, minTransferTime)
-          preparedStatement.setLong(5, fromStopId)
-          preparedStatement.setLong(6, toStopId)
-          preparedStatement.addBatch()
+        UsingPostgres { connection =>
+          val preparedStatement = connection.prepareStatement(Query.Transfer)
+          transfersBatch.foreach { (transfer: Transfer) =>
+            import transfer._
+            preparedStatement.setLong(1, fromStopId)
+            preparedStatement.setLong(2, toStopId)
+            preparedStatement.setString(3, transferType)
+            preparedStatement.setLong(4, minTransferTime)
+            preparedStatement.setLong(5, fromStopId)
+            preparedStatement.setLong(6, toStopId)
+            preparedStatement.addBatch()
+          }
+          preparedStatement.executeBatch()
         }
-        preparedStatement.executeBatch()
       }
   }
-  connection.close()
-
 }
 
 object Query {

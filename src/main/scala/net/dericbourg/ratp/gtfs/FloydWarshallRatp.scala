@@ -1,13 +1,13 @@
 package net.dericbourg.ratp.gtfs
 
-import java.sql.{Connection, ResultSet}
+import java.sql.ResultSet
 
+import net.dericbourg.db.UsingPostgres
 import net.dericbourg.util._
 import org.apache.commons.graph.Mapper
 import org.apache.commons.graph.model.UndirectedMutableGraph
 import org.apache.commons.graph.shortestpath.{AllVertexPairsShortestPath, DefaultWeightedEdgesSelector}
 import org.apache.commons.graph.weight.OrderedMonoid
-import org.postgresql.ds.PGPoolingDataSource
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
@@ -15,27 +15,13 @@ import scala.util.Try
 
 object FloydWarshallRatp extends App {
 
-
-  lazy val datasource = {
-    val p = new PGPoolingDataSource()
-    p.setDatabaseName("postgres")
-    p.setUser("postgres")
-    p.setPassword("postgres")
-
-    p
-  }
-
-  val connection = datasource.getConnection
-
-  val q = new FWQuery(connection)
-
   val (nodes, fetchNodesDuration): (Map[Long, StopNode], Duration) = timed {
-    q.stops
+    FWQuery.stops
       .groupBy(_.id)
       .mapValues(_.head)
   }
   val (links, fetchLinksDuration): (Seq[StationLink], Duration) = timed {
-    q.links
+    FWQuery.links
       .map(link => new StationLink(link.duration, nodes(link.from), nodes(link.to)))
   }
 
@@ -113,11 +99,11 @@ object FloydWarshallRatp extends App {
   }
 }
 
-class FWQuery(connection: Connection) {
+object FWQuery {
 
   case class Link(from: Long, to: Long, duration: Int)
 
-  def stops: Seq[StopNode] = {
+  def stops: Seq[StopNode] = UsingPostgres { connection =>
     val statement = connection.prepareStatement("select id, name from stop")
     val resultSet: ResultSet = statement.executeQuery()
     val buffer = new ListBuffer[StopNode]
@@ -131,7 +117,7 @@ class FWQuery(connection: Connection) {
     buffer.toList
   }
 
-  def links: Seq[Link] = {
+  def links: Seq[Link] = UsingPostgres { connection =>
     val statement = connection.prepareStatement("select start_stop_id, arrival_stop_id, connection_duration from all_links")
     val resultSet: ResultSet = statement.executeQuery()
     val buffer = new ListBuffer[Link]

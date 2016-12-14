@@ -1,6 +1,6 @@
 package net.dericbourg.ratp
 
-import org.postgresql.ds.PGPoolingDataSource
+import net.dericbourg.db.UsingPostgres
 import spray.json._
 
 import scala.io.Source
@@ -37,17 +37,6 @@ object StationsImport extends App {
     data.parseJson.convertTo[Datasets].datasets
   }
 
-  lazy val datasource = {
-    val p = new PGPoolingDataSource()
-    p.setDatabaseName("postgres")
-    p.setUser("postgres")
-    p.setPassword("postgres")
-
-    p
-  }
-
-  val connection = datasource.getConnection
-
   val sqlInsert =
     """
       |insert into station (id, name, description, latitude, longitude, post_code, department)
@@ -55,21 +44,21 @@ object StationsImport extends App {
     """.stripMargin
 
   stations.grouped(100).foreach { stationBatch =>
-    val preparedStatement = connection.prepareStatement(sqlInsert)
-    stationBatch.foreach { station =>
-      import station.fields._
-      preparedStatement.setInt(1, id)
-      preparedStatement.setString(2, name)
-      preparedStatement.setString(3, description)
-      preparedStatement.setDouble(4, latitude)
-      preparedStatement.setDouble(5, longitude)
-      preparedStatement.setString(6, postCode)
-      preparedStatement.setString(7, department)
-      preparedStatement.addBatch()
+    UsingPostgres { connection =>
+      val preparedStatement = connection.prepareStatement(sqlInsert)
+      stationBatch.foreach { station =>
+        import station.fields._
+        preparedStatement.setInt(1, id)
+        preparedStatement.setString(2, name)
+        preparedStatement.setString(3, description)
+        preparedStatement.setDouble(4, latitude)
+        preparedStatement.setDouble(5, longitude)
+        preparedStatement.setString(6, postCode)
+        preparedStatement.setString(7, department)
+        preparedStatement.addBatch()
+      }
+      preparedStatement.executeBatch()
+      println(s"Inserted ${stationBatch.length} stations")
     }
-    preparedStatement.executeBatch()
-    println(s"Inserted ${stationBatch.length} stations")
   }
-
-  connection.close()
 }
