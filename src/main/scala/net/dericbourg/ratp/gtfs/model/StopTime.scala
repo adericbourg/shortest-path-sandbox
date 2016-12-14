@@ -9,7 +9,7 @@ case class StopTime(tripId: Long, arrivalTime: Duration, departureTime: Duration
 
 object StopTime {
 
-  def parse(fields: Map[String, String]) = {
+  def parse(fields: Map[String, String]): StopTime = {
     StopTime(
       fields("trip_id").toLong,
       parseTime(fields("arrival_time")),

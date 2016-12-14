@@ -3,7 +3,7 @@ package net.dericbourg.ratp.gtfs.model
 case class Trip(routeId: Long, serviceId: Long, tripId: Long, tripShortName: String, directionId: Long)
 
 object Trip {
-  def parse(fields: Map[String, String]) = {
+  def parse(fields: Map[String, String]): Trip = {
     Trip(
       fields("route_id").toLong,
       fields("service_id").toLong,

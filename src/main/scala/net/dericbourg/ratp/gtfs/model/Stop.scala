@@ -3,7 +3,7 @@ package net.dericbourg.ratp.gtfs.model
 case class Stop(stopId: Long, stopName: String, stopDesc: String, stopLat: Double, stopLon: Double, locationType: Int, parentStation: String)
 
 object Stop {
-  def parse(fields: Map[String, String]) = {
+  def parse(fields: Map[String, String]): Stop = {
     Stop(
       fields("stop_id").toLong,
       fields("stop_name"),
