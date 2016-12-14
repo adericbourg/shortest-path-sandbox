@@ -1,4 +1,4 @@
-package net.dericbourg.ratp.gtfs
+package net.dericbourg.ratp.gtfs.model
 
 case class Trip(routeId: Long, serviceId: Long, tripId: Long, tripShortName: String, directionId: Long)
 

@@ -1,4 +1,4 @@
-package net.dericbourg.ratp.gtfs
+package net.dericbourg.ratp.gtfs.model
 
 case class Stop(stopId: Long, stopName: String, stopDesc: String, stopLat: Double, stopLon: Double, locationType: Int, parentStation: String)
 

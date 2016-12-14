@@ -1,4 +1,4 @@
-package net.dericbourg.ratp.gtfs
+package net.dericbourg.ratp.gtfs.model
 
 import java.time.Duration
 

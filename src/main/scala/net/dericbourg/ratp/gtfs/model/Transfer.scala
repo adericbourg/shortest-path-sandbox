@@ -1,4 +1,4 @@
-package net.dericbourg.ratp.gtfs
+package net.dericbourg.ratp.gtfs.model
 
 case class Transfer(fromStopId: Int, toStopId: Int, transferType: String, minTransferTime: Int)
 

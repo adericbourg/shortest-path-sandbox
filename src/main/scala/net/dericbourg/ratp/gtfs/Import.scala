@@ -3,6 +3,7 @@ package net.dericbourg.ratp.gtfs
 import java.io.{File, FilenameFilter}
 
 import com.github.tototoshi.csv._
+import net.dericbourg.ratp.gtfs.model._
 import org.postgresql.ds.PGPoolingDataSource
 
 object Import extends App {

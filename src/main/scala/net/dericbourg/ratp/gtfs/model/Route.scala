@@ -1,4 +1,5 @@
-package net.dericbourg.ratp.gtfs
+package net.dericbourg.ratp.gtfs.model
+
 case class Route(routeId: Long, routeShortName: String, routeLongName: String, routeDesc: String)
 
 object Route {
