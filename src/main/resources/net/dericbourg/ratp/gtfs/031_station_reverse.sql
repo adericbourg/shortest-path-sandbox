@@ -11,7 +11,7 @@ CREATE OR REPLACE VIEW station_reverse (
     ss.name AS start_stop_name,
     ts.id   AS arrival_stop_id,
     ts.name AS arrival_stop_name,
-    120     AS connection_duration,
+    30      AS connection_duration,
     sri.short_name
   FROM stop ss
     JOIN stop ts ON ss."name" = ts."name" AND ss.id <> ts.id
