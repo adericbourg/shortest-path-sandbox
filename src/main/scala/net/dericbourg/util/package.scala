@@ -18,5 +18,7 @@ package object util {
     Timed(result, Duration(stopwatch.elapsed(precision), precision))
   }
 
-  implicit def asTuple[R](timed: Timed[R]): (R, Duration) = (timed.result, timed.duration)
+  implicit class Timed2Tuple[R](timed: Timed[R]) {
+    def asTuple(): (R, Duration) = (timed.result, timed.duration)
+  }
 }

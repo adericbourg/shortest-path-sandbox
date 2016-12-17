@@ -19,11 +19,11 @@ object FloydWarshallRatp extends App {
     FWQuery.stops
       .groupBy(_.id)
       .mapValues(_.head)
-  }
+  }.asTuple()
   val (links, fetchLinksDuration): (Seq[StationLink], Duration) = timed {
     FWQuery.links
       .map(link => new StationLink(link.duration, nodes(link.from), nodes(link.to)))
-  }
+  }.asTuple()
 
   println(s"${nodes.keys.size} stations (fetched in $fetchNodesDuration)")
   println(s"${links.size} links (fetched in $fetchLinksDuration)")
@@ -34,7 +34,7 @@ object FloydWarshallRatp extends App {
     links.foreach(g.addEdge)
 
     g
-  }
+  }.asTuple()
   println(s"Graph built in $graphBuildDuration")
 
 
@@ -42,7 +42,7 @@ object FloydWarshallRatp extends App {
     val pathSourceSelector = new DefaultWeightedEdgesSelector(graph.underlying)
       .whereEdgesHaveWeights[Int, StationLinkMapper](new StationLinkMapper)
     pathSourceSelector.applyingFloydWarshall(new Monoid)
-  }
+  }.asTuple()
   println(s"Floyd-Warshall algorithm applied in $floydWarshallDuration")
 
   val voltaire = 1633
@@ -85,7 +85,7 @@ object FloydWarshallRatp extends App {
         // Sorting be mean first gives more power to close vertices. Sorting by standard deviation gives more equity.
         // Mean first is more pragmatic.
         .sortBy(s => (s.mean, s.standardDeviation))
-    }
+    }.asTuple()
 
     println(s"Optimal solution (found in $duration):")
     val optimalTarget = stats.head
