@@ -9,6 +9,7 @@ import org.apache.commons.graph.model.DirectedMutableGraph
 import org.apache.commons.graph.shortestpath.{AllVertexPairsShortestPath, DefaultWeightedEdgesSelector}
 import org.apache.commons.graph.weight.OrderedMonoid
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
 import scala.util.Try
@@ -66,6 +67,12 @@ object FloydWarshallRatp extends App {
     nodes(chatelet),
     nodes(stGeorges)
   ))
+
+  // Test fucked up cases on weird lines
+  val javel = 1903
+  val michelAngeMolitor = 1817
+  val path = floydWarshall.findShortestPath(nodes(javel), nodes(michelAngeMolitor))
+  path.getEdges.asScala.foreach(println)
 
   def findEccentricity(sources: Seq[StopNode]): Unit = {
     println("------------------")
