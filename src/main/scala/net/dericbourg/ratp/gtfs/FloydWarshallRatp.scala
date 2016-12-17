@@ -1,18 +1,11 @@
 package net.dericbourg.ratp.gtfs
 
-import java.sql.ResultSet
-
-import net.dericbourg.db.UsingPostgres
+import net.dericbourg.ratp.gtfs.graph._
 import net.dericbourg.util._
-import org.apache.commons.graph.Mapper
-import org.apache.commons.graph.model.DirectedMutableGraph
 import org.apache.commons.graph.shortestpath.{AllVertexPairsShortestPath, DefaultWeightedEdgesSelector}
-import org.apache.commons.graph.weight.OrderedMonoid
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
-import scala.util.Try
 
 object FloydWarshallRatp extends App {
 
@@ -98,106 +91,5 @@ object FloydWarshallRatp extends App {
     val optimalTarget = stats.head
     println(optimalTarget)
     println()
-  }
-}
-
-object FWQuery {
-
-  case class Link(from: Long, to: Long, duration: Int)
-
-  def stops: Seq[StopNode] = UsingPostgres { connection =>
-    val statement = connection.prepareStatement("select id, name from stop")
-    val resultSet: ResultSet = statement.executeQuery()
-    val buffer = new ListBuffer[StopNode]
-    while (resultSet.next()) {
-      val node = StopNode(
-        resultSet.getLong(1),
-        resultSet.getString(2)
-      )
-      buffer += node
-    }
-    buffer.toList
-  }
-
-  def links: Seq[Link] = UsingPostgres { connection =>
-    val statement = connection.prepareStatement("select start_stop_id, arrival_stop_id, connection_duration from all_links")
-    val resultSet: ResultSet = statement.executeQuery()
-    val buffer = new ListBuffer[Link]
-    while (resultSet.next()) {
-      val link = Link(
-        resultSet.getLong(1),
-        resultSet.getLong(2),
-        resultSet.getInt(3)
-      )
-      buffer += link
-    }
-    buffer.toList
-  }
-}
-
-case class StopNode(id: Long, name: String)
-
-class StationLink(val weight: Int, val head: StopNode, val tail: StopNode) {
-  override def toString = s"StationLink(weight=$weight, head=$head, tail=$tail)"
-}
-
-class StationLinkMapper extends Mapper[StationLink, Int] {
-  override def map(input: StationLink): Int = input.weight
-}
-
-class Monoid extends OrderedMonoid[Int] {
-  override def compare(o1: Int, o2: Int): Int = o1.compareTo(o2)
-
-  override def identity(): Int = 0
-
-  override def append(e1: Int, e2: Int): Int = e1 + e2
-
-  override def inverse(element: Int): Int = -element
-}
-
-class Stats(vertex: StopNode, values: Seq[Int]) {
-
-
-  val standardDeviation: Double = Stats.standardDeviation(values)
-  val mean: Double = Stats.mean(values)
-  val sum: Int = values.sum
-
-
-  override def toString = s"Stats(${vertex.name} (${vertex.id}): (mean: $mean, stdDev: $standardDeviation, sum: $sum))"
-}
-
-object Stats {
-
-  import Numeric.Implicits._
-
-  def apply(vertex: StopNode, values: Seq[Int]): Stats = new Stats(vertex, values)
-
-  private[Stats] def mean[T: Numeric](xs: Iterable[T]): Double = xs.sum.toDouble / xs.size
-
-  private[Stats] def variance[T: Numeric](xs: Iterable[T]): Double = {
-    val avg = mean(xs)
-    xs.map(_.toDouble).map(a => math.pow(a - avg, 2)).sum / xs.size
-  }
-
-  private[Stats] def standardDeviation[T: Numeric](xs: Iterable[T]): Double = {
-    val avg = mean(xs)
-    xs.map(_.toDouble).map(a => math.pow(a - avg, 2)).sum / xs.size
-    math.sqrt(variance(xs))
-  }
-}
-
-class RatpGraph {
-
-  import scala.collection.JavaConverters._
-
-  val underlying = new DirectedMutableGraph[StopNode, StationLink]()
-
-  def addVertex(vertex: StopNode): Unit = underlying.addVertex(vertex)
-
-  def vertices: Seq[StopNode] = underlying.getVertices.asScala.toSeq
-
-  def addEdge(edge: StationLink): Unit = {
-    // For now, there are some duplicates in the results
-    Try(underlying.addEdge(edge.head, edge, edge.tail))
   }
 }
