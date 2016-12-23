@@ -8,8 +8,12 @@ object FloydWarshallCacheFeed extends App {
     .groupBy(_.id)
     .mapValues(_.head)
 
+  println(s"Fetched ${nodes.size} nodes")
+
   val links = FWQuery.links
     .map(link => new StationLink(link.duration, nodes(link.from), nodes(link.to)))
+
+  println(s"Fetched ${links.size} links")
 
   val graph = {
     val g = new RatpGraph
@@ -19,11 +23,15 @@ object FloydWarshallCacheFeed extends App {
     g
   }
 
+  println("Graph build")
+
   val floydWarshall = {
     val pathSourceSelector = new DefaultWeightedEdgesSelector(graph.underlying)
       .whereEdgesHaveWeights[Int, StationLinkMapper](new StationLinkMapper)
     pathSourceSelector.applyingFloydWarshall(new Monoid)
   }
+
+  println("Floyd-Warshall computed. Saving results.")
 
   nodes.values.par.foreach { startNode =>
     val weights = nodes.values.map { endNode =>
