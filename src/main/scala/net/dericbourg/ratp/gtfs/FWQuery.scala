@@ -27,7 +27,7 @@ object FWQuery {
   }
 
   def links: Seq[Link] = UsingPostgres { connection =>
-    val statement = connection.prepareStatement("select start_stop_id, arrival_stop_id, connection_duration from all_links")
+    val statement = connection.prepareStatement("select start_stop_id, arrival_stop_id, connection_duration from link")
     val resultSet: ResultSet = statement.executeQuery()
     val buffer = new ListBuffer[Link]
     while (resultSet.next()) {
