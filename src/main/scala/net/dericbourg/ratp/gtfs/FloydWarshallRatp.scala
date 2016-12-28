@@ -16,7 +16,7 @@ object FloydWarshallRatp extends App {
   }.asTuple()
   val (links, fetchLinksDuration): (Seq[StationLink], Duration) = timed {
     FWQuery.links
-      .map(link => new StationLink(link.duration, nodes(link.from), nodes(link.to)))
+      .map(link => new StationLink(link.duration, nodes(link.from), nodes(link.to), link.linkType))
   }.asTuple()
 
   println(s"${nodes.keys.size} stations (fetched in $fetchNodesDuration)")
