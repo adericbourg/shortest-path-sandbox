@@ -1,10 +1,13 @@
 package net.dericbourg.ratp.gtfs
 
 import net.dericbourg.ratp.gtfs.FWQuery.LinkType._
+import net.dericbourg.ratp.gtfs.graph.StationLink._
 import net.dericbourg.ratp.gtfs.graph._
 import org.apache.commons.graph.shortestpath.DefaultWeightedEdgesSelector
+import play.api.libs.json.{JsValue, Json}
 
 import scala.annotation.tailrec
+import scala.collection.JavaConverters._
 
 object FloydWarshallCacheFeed extends App {
   val nodes = FWQuery.stops
@@ -26,7 +29,7 @@ object FloydWarshallCacheFeed extends App {
     g
   }
 
-  println("Graph build")
+  println("Graph built")
 
   val floydWarshall = {
     val pathSourceSelector = new DefaultWeightedEdgesSelector(graph.underlying)
@@ -38,20 +41,21 @@ object FloydWarshallCacheFeed extends App {
 
   nodes.values.par.foreach { startNode =>
     val weights = nodes.values.map { endNode =>
-      val (weight, amortizedWeight): (Int, Int) =
-        if (startNode == endNode) (0, 0)
+      val (weight, amortizedWeight, trip): (Int, Int, JsValue) =
+        if (startNode == endNode) (0, 0, Json.toJson(Seq[StationLink]()))
         else {
           val shortestPath = floydWarshall.findShortestPath(startNode, endNode)
-          (shortestPath.getWeight, getAmortizedWeight(shortestPath.getEdges))
+          val trip = Json.toJson(shortestPath.getEdges.asScala.toSeq)
+          (shortestPath.getWeight, getAmortizedWeight(shortestPath.getEdges), trip)
         }
-      StationToStationWeight(startNode, endNode, weight, amortizedWeight)
+
+      StationToStationWeight(startNode, endNode, weight, amortizedWeight, trip)
     }
     println(s"Inserting distances from station $startNode")
     FWQuery.storeDistances(weights)
   }
 
   private def getAmortizedWeight(edges: java.lang.Iterable[StationLink]): Int = {
-    import scala.collection.JavaConverters._
     getAmortizedWeight(edges.asScala.toList)
   }
 

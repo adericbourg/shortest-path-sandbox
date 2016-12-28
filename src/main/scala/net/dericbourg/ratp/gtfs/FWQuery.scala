@@ -67,12 +67,13 @@ object FWQuery {
   }
 
   def storeDistances(weights: Iterable[StationToStationWeight]) = UsingPostgres { connection =>
-    val statement = connection.prepareStatement("insert into station_distance (source, target, weight, amortized_weight) values (?, ?, ?, ?)")
+    val statement = connection.prepareStatement("insert into station_distance (source, target, weight, amortized_weight, trip) values (?, ?, ?, ?, ?)")
     weights.foreach { weight =>
       statement.setLong(1, weight.source.id)
       statement.setLong(2, weight.target.id)
       statement.setInt(3, weight.weight)
       statement.setInt(4, weight.amortizedWeight)
+      statement.setString(5, weight.trip.toString())
       statement.addBatch()
     }
     statement.executeBatch()

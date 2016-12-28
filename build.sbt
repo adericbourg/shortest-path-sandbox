@@ -17,7 +17,8 @@ libraryDependencies ++= Seq(
 
 libraryDependencies ++= Seq(
   "io.spray" %% "spray-json" % "1.3.2",
-  "com.github.tototoshi" %% "scala-csv" % "1.3.4"
+  "com.github.tototoshi" %% "scala-csv" % "1.3.4",
+  "com.typesafe.play" %% "play-json" % "2.6.0-M1"
 )
 
 libraryDependencies ++= Seq(
