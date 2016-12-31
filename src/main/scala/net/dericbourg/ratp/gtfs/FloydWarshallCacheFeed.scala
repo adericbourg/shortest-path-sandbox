@@ -60,15 +60,16 @@ object FloydWarshallCacheFeed extends App {
   }
 
   private def getAmortizedWeight(edges: Seq[StationLink]): Int = {
-    val strippedStart = stripSelfConnections(edges)
-    val strippedReverse = stripSelfConnections(strippedStart.reverse)
+    val strippedStart = startFromConnection(edges)
+    val strippedReverse = startFromConnection(strippedStart.reverse)
     getTotalWeight(strippedReverse.reverse)
   }
 
   @tailrec
-  private def stripSelfConnections(edges: Seq[StationLink]): Seq[StationLink] = {
+  private def startFromConnection(edges: Seq[StationLink]): Seq[StationLink] = {
     edges match {
-      case head :: tail if head.linkType == Self => stripSelfConnections(tail)
+      case head :: tail if head.linkType == Self => startFromConnection(tail)
+      case head :: tail if head.linkType == Transfer => startFromConnection(tail)
       case _ => edges
     }
   }
