@@ -45,8 +45,10 @@ object FloydWarshallCacheFeed extends App {
         if (startNode == endNode) (0, 0, Json.toJson(Seq[StationLink]()))
         else {
           val shortestPath = floydWarshall.findShortestPath(startNode, endNode)
-          val trip = Json.toJson(shortestPath.getEdges.asScala.toSeq)
-          (shortestPath.getWeight, getAmortizedWeight(shortestPath.getEdges), trip)
+          val strippedPath = getStrippedTrip(shortestPath.getEdges)
+          val amortizedWeight = getTotalWeight(strippedPath)
+          val trip = Json.toJson(strippedPath)
+          (shortestPath.getWeight, amortizedWeight, trip)
         }
 
       StationToStationWeight(startNode, endNode, weight, amortizedWeight, trip)
@@ -55,24 +57,33 @@ object FloydWarshallCacheFeed extends App {
     FWQuery.storeDistances(weights)
   }
 
-  private def getAmortizedWeight(edges: java.lang.Iterable[StationLink]): Int = {
-    getAmortizedWeight(edges.asScala.toList)
+  private def getStrippedTrip(edges: java.lang.Iterable[StationLink]): Seq[StationLink] = {
+    getStrippedTrip(edges.asScala.toList)
   }
 
-  private def getAmortizedWeight(edges: Seq[StationLink]): Int = {
+  private def getStrippedTrip(edges: Seq[StationLink]): Seq[StationLink] = {
     val strippedStart = startFromConnection(edges)
     val strippedReverse = startFromConnection(strippedStart.reverse)
-    getTotalWeight(strippedReverse.reverse)
+    strippedReverse.reverse
   }
 
   @tailrec
   private def startFromConnection(edges: Seq[StationLink]): Seq[StationLink] = {
     edges match {
-      case head :: tail if head.linkType == Self => startFromConnection(tail)
-      case head :: tail if head.linkType == Transfer => startFromConnection(tail)
+      case head :: Nil if head.linkType == Self || head.linkType == Transfer =>
+        val amortized = new StationLink(
+          weight = 0,
+          head = head.head,
+          tail = head.tail,
+          linkType = head.linkType
+        )
+        Seq(amortized)
+      case head :: tail if head.linkType == Self || head.linkType == Transfer =>
+        startFromConnection(tail)
       case _ => edges
     }
   }
 
   private def getTotalWeight(edges: Iterable[StationLink]): Int = edges.map(_.weight).sum
+
 }
