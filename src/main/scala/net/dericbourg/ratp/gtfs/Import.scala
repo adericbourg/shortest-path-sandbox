@@ -52,13 +52,15 @@ object Import extends App {
           val preparedStatement = connection.prepareStatement(Query.Stop)
           stopBatch.foreach { (stop: Stop) =>
             import stop._
+            val point = s"POINT($stopLat $stopLon)"
             preparedStatement.setLong(1, stopId)
             preparedStatement.setString(2, stopName)
             preparedStatement.setString(3, stopDesc)
             preparedStatement.setDouble(4, stopLat)
             preparedStatement.setDouble(5, stopLon)
             preparedStatement.setInt(6, locationType)
-            preparedStatement.setString(7, parentStation)
+            preparedStatement.setString(7, point)
+            preparedStatement.setString(8, parentStation)
             preparedStatement.addBatch()
           }
           preparedStatement.executeBatch()
@@ -151,8 +153,8 @@ object Query {
 
   val Stop: String =
     """
-      |insert into stop (id, name, description, latitude, longitude, location_type, parent_station)
-      |values (?, ?, ?, ?, ?, ?, ?)
+      |insert into stop (id, name, description, latitude, longitude, location_type, coordinates, parent_station)
+      |select ?, ?, ?, ?, ?, ?, ST_GeomFromText(?, 4326), ?
     """.stripMargin
 
   val Trip: String =

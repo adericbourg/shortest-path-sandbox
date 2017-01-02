@@ -15,6 +15,16 @@ CREATE TABLE stop (
   parent_station VARCHAR(1024)
 );
 
+SELECT AddGeometryColumn('stop', 'coordinates', '4326', 'POINT', 2);
+
+UPDATE stop s
+SET coordinates = comp.coordinates
+FROM (SELECT
+        id,
+        ST_GeomFromText('POINT(' || latitude || ' ' || longitude || ')', 4326) AS coordinates
+      FROM stop) AS comp
+WHERE comp.id = s.id;
+
 CREATE TABLE trip (
   id         BIGINT PRIMARY KEY,
   route_id   BIGINT        NOT NULL,
