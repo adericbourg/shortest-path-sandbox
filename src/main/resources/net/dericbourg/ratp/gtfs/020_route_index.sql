@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW route_index (
+CREATE MATERIALIZED VIEW route_index (
     stop_id,
     route_id,
     short_name,

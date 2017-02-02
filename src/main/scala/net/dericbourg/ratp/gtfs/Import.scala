@@ -142,6 +142,11 @@ object Import extends App {
         }
       }
   }
+
+  UsingPostgres { connection =>
+    val preparedCall = connection.prepareCall(Query.Refresh)
+    preparedCall.execute()
+  }
 }
 
 object Query {
@@ -175,5 +180,10 @@ object Query {
       |select ?, ?, ?, ?
       |where exists (select 1 from stop where id = ?)
       |and exists (select 1 from stop where id = ?);
+    """.stripMargin
+
+  val Refresh: String =
+    """
+      |refresh materialized view route_index;
     """.stripMargin
 }
