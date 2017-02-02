@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW all_links (
+CREATE MATERIALIZED VIEW link (
     start_stop_id,
     start_stop_name,
     arrival_stop_id,
@@ -44,16 +44,3 @@ AS (
        ) u
   GROUP BY start_stop_id, arrival_stop_id, start_stop_name, arrival_stop_name, source
 );
-
-CREATE TABLE link (
-  start_stop_id       INT           NOT NULL,
-  start_stop_name     VARCHAR(1024) NULL,
-  arrival_stop_id     INT           NOT NULL,
-  arrival_stop_name   VARCHAR(1024) NULL,
-  connection_duration INT           NULL,
-  source              VARCHAR(10)   NULL
-);
-
-INSERT INTO link
-  SELECT *
-  FROM all_links;

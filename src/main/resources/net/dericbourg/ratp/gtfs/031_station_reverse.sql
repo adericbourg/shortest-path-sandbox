@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW station_reverse (
+CREATE MATERIALIZED VIEW station_reverse (
     start_stop_id,
     start_stop_name,
     arrival_stop_id,

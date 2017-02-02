@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW enriched_transfer (
+CREATE MATERIALIZED VIEW enriched_transfer (
     start_stop_id,
     start_stop_name,
     arrival_stop_id,

@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW enriched_connection (
+CREATE MATERIALIZED VIEW enriched_connection (
     start_stop_id,
     leave_time,
     start_stop_name,
