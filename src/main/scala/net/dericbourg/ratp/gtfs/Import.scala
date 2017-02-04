@@ -144,8 +144,10 @@ object Import extends App {
   }
 
   UsingPostgres { connection =>
-    val preparedCall = connection.prepareCall(Query.Refresh)
-    preparedCall.execute()
+    Query.Refresh.foreach { refresh =>
+      val preparedCall = connection.prepareCall(refresh)
+      preparedCall.execute()
+    }
   }
 }
 
@@ -182,8 +184,12 @@ object Query {
       |and exists (select 1 from stop where id = ?);
     """.stripMargin
 
-  val Refresh: String =
-    """
-      |refresh materialized view route_index;
-    """.stripMargin
+  val Refresh: Seq[String] = Seq(
+    "refresh materialized view route_index;",
+    "refresh materialized view enriched_connection;",
+    "refresh materialized view enriched_transfer;",
+    "refresh materialized view link;",
+    "refresh materialized view route_index;",
+    "refresh materialized view station_reverse;"
+  )
 }
